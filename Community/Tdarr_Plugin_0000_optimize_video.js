@@ -1,6 +1,4 @@
 /* eslint-disable max-len */
-const vaapi = '-hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format vaapi';
-
 const details = () => ({
   id: '-eIDCUviI',
   Stage: 'Pre-processing',
@@ -11,15 +9,6 @@ const details = () => ({
   Version: '1.0',
   Tags: 'video,ffmpeg,vaapi',
   Inputs: [
-  // {
-  //   name: 'max_bitrate',
-  //   type: 'string',
-  //   defaultValue: '100',
-  //   inputUI: {
-  //     type: 'text',
-  //   },
-  //   tooltip: 'The maximum bitrate of the video in Mbps.',
-  // },
     {
       name: 'threshold_bitrate',
       type: 'string',
@@ -30,9 +19,9 @@ const details = () => ({
       tooltip: 'If the video bitrate is above this value, it will be transcoded. (Mbps)',
     },
     {
-      name: 'crf',
+      name: 'quality',
       type: 'string',
-      defaultValue: '16',
+      defaultValue: '22',
       inputUI: {
         type: 'text',
       },
@@ -89,12 +78,12 @@ const plugin = (file, librarySettings, inputs) => {
     return response;
   }
 
-  const maxBitrate = Number(inputVars.max_bitrate);
-  const crf = Number(inputVars.crf);
+  const quality = Number(inputVars.crf);
 
   response.processFile = true;
   // -maxrate:v ${maxBitrate}M -bufsize:v ${Math.floor(maxBitrate * 3)}M
-  response.preset = `${vaapi},-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy -c:v:0 hevc_vaapi -crf ${crf} -movflags +faststart -strict -2`;
+  const qsv = '-hwaccel qsv -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format qsv';
+  response.preset = `${qsv},-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy -c:v:0 hevc_qsv -global_quality ${quality} -movflags +faststart -strict -2`;
 
   response.infoLog += `☒ Video bitrate is above threshold of ${inputs.threshold_bitrate} or video is not HEVC, transcoding to HEVC.\n`;
 
@@ -102,4 +91,4 @@ const plugin = (file, librarySettings, inputs) => {
 };
 
 module.exports.details = details;
-module.exports.plugin = plugin;0
+module.exports.plugin = plugin;
