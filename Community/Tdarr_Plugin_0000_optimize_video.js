@@ -25,17 +25,7 @@ const details = () => ({
       inputUI: {
         type: 'text',
       },
-      tooltip: 'The CRF value to use when transcoding.',
-    },
-    {
-      name: 'speed',
-      type: 'string',
-      defaultValue: 'medium',
-      inputUI: {
-        type: 'dropdown',
-        options: ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'],
-      },
-      tooltip: 'The speed preset to use when transcoding.',
+      tooltip: 'The quality 0-51 value to use when transcoding.',
     }],
 });
 
@@ -73,17 +63,17 @@ const plugin = (file, librarySettings, inputs) => {
   });
 
   const thresholdBitrate = Number(inputVars.threshold_bitrate) * 1000000;
-  if (videoBitrate < thresholdBitrate + (thresholdBitrate * 0.03) && isHevc) {
+  if (videoBitrate < thresholdBitrate && isHevc) {
     response.infoLog += `☑ Video bitrate is below threshold of ${inputs.threshold_bitrate} and HEVC, no processing required.\n`;
     return response;
   }
 
-  const quality = Number(inputVars.crf);
+  const quality = Number(inputVars.quality);
 
   response.processFile = true;
   // -maxrate:v ${maxBitrate}M -bufsize:v ${Math.floor(maxBitrate * 3)}M
   const qsv = '-hwaccel qsv -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format qsv';
-  response.preset = `${qsv},-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy -c:v:0 hevc_qsv -global_quality ${quality} -movflags +faststart -strict -2`;
+  response.preset = `${qsv},-map 0:v? -map 0:a? -map 0:s? -map 0:d? -map 0:t? -c copy -c:v:0 hevc_qsv -preset slow -look_ahead 1 -global_quality ${quality} -movflags +faststart -strict -2`;
 
   response.infoLog += `☒ Video bitrate is above threshold of ${inputs.threshold_bitrate} or video is not HEVC, transcoding to HEVC.\n`;
 
